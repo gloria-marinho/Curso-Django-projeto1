@@ -1,16 +1,13 @@
 {% include 'recipes/partials/head.html' %}
 
 <body>
-    <header class="main-header-container">
-        <div class="main_header-container">
-            <h1>
-                <a href="/">
-                    <i class="fas fa-address-book"></i>
-                    <span>recipes {{name }}  
-                    </span>
-                </a>
-            </h1>   
-        </div>
-    </header>
+   {% include 'recipes/partials/header.html'%}
+
+    <div class="search-container">
+        <div class="container">
+            <from action="">
+                <input type="search" class="search-input" nome="search">
+                <button type="submit"><ion-icon ios="ios-search" md="md-search"></ion-icon></button>
+            </from>
     </body>
 </html>
