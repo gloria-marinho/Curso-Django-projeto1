@@ -1,5 +1,7 @@
 from django.shortcuts import render
 
+from utils.factory import make_recipe
+
 from .models import Recipe
 
 
@@ -24,3 +26,6 @@ def recipe(request, id):
         'recipe': make_recipe(),
         'is_detail_page': True,
 })
+
+def search(request):
+    pass
