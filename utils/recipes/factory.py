@@ -1,4 +1,4 @@
-from inspect import signature
+# from inspect import signature
 from random import randint
 
 from faker import Faker
@@ -10,7 +10,6 @@ def rand_ratio():
 
 fake = Faker('pt_BR')
 # print(signature(fake.random_number))
-
 
 
 def make_recipe():
@@ -38,5 +37,5 @@ def make_recipe():
 
 
 if __name__ == '__main__':
-        from pprint import pprint
-        pprint(make_recipe())
+    from pprint import pprint
+    pprint(make_recipe())
