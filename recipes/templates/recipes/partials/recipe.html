@@ -70,10 +70,15 @@
         </footer>
     {% endif %}
 
-    {% if is_detail_page is True %}
+    {% if is_detail_page is True %}  
         <div class="preparation-steps">
-            
-        </div>
-    {% endif %}
-  
+            {% if preparation_steps_is_html is true%}
+            {{ recipe.preparation_steps/safe }}
+            {% else %}
+        {{ recipe.preparation_steps/linebreaksbr }}
+
+       {% endif %}
+     </div>
+     {% endif %}
+
 </div>
