@@ -1,51 +1,76 @@
-from django.core.exceptions import ValidationError
-from parameterized import parameterized
-
-from .test_recipe_base import Recipe, RecipeTestBase
+from django.test import TestCase
+from recipes.models import Category, Recipe, User
 
 
-class RecipeTestBase(TestCase):
+class RecipeMixin:
+    def make_category(self, name='Category'):
+        return Category.objects.create(name=name)
+
+    def make_author(
+        self,
+        first_name='user',
+        last_name='name',
+        username='username',
+        password='123456',
+        email='username@email.com',
+    ):
+        return User.objects.create_user(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+            password=password,
+            email=email,
+        )
+
+    def make_recipe(
+        self,
+        category_data=None,
+        author_data=None,
+        title='Recipe Title',
+        description='Recipe Description',
+        slug='recipe-slug',
+        preparation_time=10,
+        preparation_time_unit='Minutos',
+        servings=5,
+        servings_unit='Porções',
+        preparation_steps='Recipe Preparation Steps',
+        preparation_steps_is_html=False,
+        is_published=True,
+    ):
+        if category_data is None:
+            category_data = {}
+
+        if author_data is None:
+            author_data = {}
+
+        return Recipe.objects.create(
+            category=self.make_category(**category_data),
+            author=self.make_author(**author_data),
+            title=title,
+            description=description,
+            slug=slug,
+            preparation_time=preparation_time,
+            preparation_time_unit=preparation_time_unit,
+            servings=servings,
+            servings_unit=servings_unit,
+            preparation_steps=preparation_steps,
+            preparation_steps_is_html=preparation_steps_is_html,
+            is_published=is_published,
+        )
+
+    def make_recipe_in_batch(self, qtd=10):
+        recipes = []
+        for i in range(qtd):
+            kwargs = {
+                'title': f'Recipe Title {i}',
+                'slug': f'r{i}',
+                'author_data': {'username': f'u{i}'}
+            }
+            recipe = self.make_recipe(**kwargs)
+            recipes.append(recipe)
+        return recipes
+
+
+class RecipeTestBase(TestCase, RecipeMixin):
     def setUp(self) -> None:
         return super().setUp()
-    
-
-    def make_recipe_no_defaults(self):
-        recipe = Recipe(
-            category=self.make_category(name='Test Default Category'),
-            author=self.make_author(username='newuser'),
-            title='Recipe Title',
-            description='Recipe Description',
-            slug='recipe-slug',
-            preparation_time=10,
-            preparation_time_unit='Minutos',
-            servings=5,
-            servings_unit='Porções'
-            preparation_steps='Recipe Preparation Steps',
-        )
-        recipe.full_clean()
-        recipe.save()
-        return recipe
-
-    @parameterized.expand([
-        ('title', 65),
-        ('description', 165),
-        ('preparation_time_unit', 65),
-        ('servings_unit', 65),
-        ])
-    def test_recipe_fields_max_length(self, field, max_length):
-        setattr(self.recipe, field, 'A' * (max_length + 1))
-        with self.assertRaises(ValidationError):
-            self.recipe.full_clean()
-    def test_recipe_preparation_steps_is_html_is_false_by_default(self):
-        recipe = self.make_recipe_no_defaults()
-        self.assertFalse(
-            recipe.preparation_steps_is_html,
-            msg='Recipe preparation_steps_is_html is not False',
-        )
-
-    def test_recipe_is_published_is_false_by_default(self):
-        recipe = self.make_recipe_no_defaults()
-        self.assertFalse(
-            recipe.is_published,
-            msg='Recipe is_published is not False',
-        )
