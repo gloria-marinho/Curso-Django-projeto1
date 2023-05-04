@@ -14,9 +14,8 @@ def home(request):
     recipes = Recipe.objects.filter(
         is_published=True,
     ).order_by('-id')
-   
-    page_obj, pagination_range = make_pagination(request, recipes, PER_PAGE)       
-    
+    page_obj = pagination_range = make_pagination(request, recipes, PER_PAGE)       
+
     return render(request, 'recipes/pages/home.html', context={
         'recipes': page_obj,
         'pagination_range': pagination_range
@@ -30,7 +29,6 @@ def category(request, category_id):
             is_published=True,
         ).order_by('-id')
     )
-    
     page_obj, pagination_range = make_pagination(request, recipes, PER_PAGE)
 
     return render(request, 'recipes/pages/category.html', context={
@@ -63,13 +61,13 @@ def search(request):
         is_published=True
     ).order_by('-id')
 
-    page_obj, pagination_range = make_pagination(request,recipes, PER_PAGE)
+    page_obj, pagination_range = make_pagination(request, recipes, PER_PAGE)
 
     return render(request, 'recipes/pages/search.html', {
         'page_title': f'Search for "{search_term}" |',
         'search_term': search_term,
         'recipes': page_obj,
-        'pagnation_range': pagination_range,'additional_url_query': f'&q={search_term}',
+        'pagnation_range': pagination_range,
         'additional_url_query': f'&q={search_term}',
     })
 
