@@ -8,7 +8,6 @@ from django.urls import reverse
 from .forms import LoginForm, RegisterForm
 
 
-
 def register_view(request):
     register_form_data = request.session.get('register_form_data', None)
     form = RegisterForm(register_form_data)
@@ -73,10 +72,13 @@ def login_create(request):
 @login_required(login_url='authors:login', redirect_field_name='next')
 def logout_view(request):
     if not request.POST:
+        messages.error(request, 'Invalid logout request')    
         return redirect(reverse('authors:login'))
-
+ 
     if request.POST.get('username') != request.user.username:
+        messages.error(request, 'Invalid logout request')
         return redirect(reverse('authors:login'))
-
+    
+    messages.error(request, 'Invalid logout request')
     logout(request)
     return redirect(reverse('authors:login'))
