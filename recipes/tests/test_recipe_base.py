@@ -1,9 +1,10 @@
 from django.test import TestCase
+
 from recipes.models import Category, Recipe, User
 
 
 class RecipeMixin:
-    def make_category(self, name='Category'):
+    def make_category(self, name='category'):
         return Category.objects.create(name=name)
 
     def make_author(
