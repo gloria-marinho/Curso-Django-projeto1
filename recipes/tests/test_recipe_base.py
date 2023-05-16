@@ -1,10 +1,9 @@
 from django.test import TestCase
-
 from recipes.models import Category, Recipe, User
 
 
 class RecipeMixin:
-    def make_category(self, name='category'):
+    def make_category(self, name='Category'):
         return Category.objects.create(name=name)
 
     def make_author(
@@ -22,7 +21,7 @@ class RecipeMixin:
             password=password,
             email=email,
         )
-    
+
     def make_recipe(
         self,
         category_data=None,
@@ -58,7 +57,7 @@ class RecipeMixin:
             preparation_steps_is_html=preparation_steps_is_html,
             is_published=is_published,
         )
-    
+
     def make_recipe_in_batch(self, qtd=10):
         recipes = []
         for i in range(qtd):
