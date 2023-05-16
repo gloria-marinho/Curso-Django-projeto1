@@ -1,13 +1,10 @@
-# flake8:noqa
+from authors.forms import LoginForm, RegisterForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
-
-from authors.forms import LoginForm, RegisterForm
-from authors.forms.recipe_form import AuthorRecipeForm
 from recipes.models import Recipe
 
 
@@ -23,20 +20,20 @@ def register_view(request):
 def register_create(request):
     if not request.POST:
         raise Http404()
-
+   
     POST = request.POST
     request.session['register_form_data'] = POST
     form = RegisterForm(POST)
-
+   
     if form.is_valid():
         user = form.save(commit=False)
         user.set_password(user.password)
         user.save()
-        messages.success(request, 'Your user is created, please login.')
-
-        del (request.session['register_form_data'])
+        messages.success(request, 'Your user is created, please log in.')
+        
+        del(request.session['register_form_data'])
         return redirect(reverse('authors:login'))
-
+    
     return redirect('authors:register')
 
 
@@ -51,7 +48,7 @@ def login_view(request):
 def login_create(request):
     if not request.POST:
         raise Http404()
-
+    
     form = LoginForm(request.POST)
 
     if form.is_valid():
@@ -67,7 +64,7 @@ def login_create(request):
             messages.error(request, 'Invalid credentials')
     else:
         messages.error(request, 'Invalid username or password')
-
+    
     return redirect(reverse('authors:dashboard'))
 
 
@@ -76,11 +73,11 @@ def logout_view(request):
     if not request.POST:
         messages.error(request, 'Invalid logout request')
         return redirect(reverse('authors:login'))
-
+    
     if request.POST.get('username') != request.user.username:
         messages.error(request, 'Invalid logout user')
         return redirect(reverse('authors:login'))
-
+    
     messages.success(request, 'Logged out successfully')
     logout(request)
     return redirect(reverse('authors:login'))
@@ -92,6 +89,7 @@ def dashboard(request):
         is_published=False,
         author=request.user
     )
+
     return render(
         request,
         'authors/pages/dashboard.html',
