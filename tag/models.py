@@ -20,5 +20,6 @@ class Tag(models.Model):
             self.slug = slugify(f'{self.name}-{rand_letters}')
         return super().save(*args, **kwargs)
 
+# Create your models here.
     def __str__(self):
         return self.name
