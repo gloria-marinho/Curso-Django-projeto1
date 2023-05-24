@@ -1,210 +1,63 @@
-import os
+from unittest.mock import patch
 
-from django.db.models import Q
-from django.db.models.aggregates import Count
-from django.forms.models import model_to_dict
-from django.http import JsonResponse
-from django.http.response import Http404
-from django.shortcuts import render
-from django.views.generic import DetailView, ListView
-from django.utils import translation
-from django.utils.translation import gettext as _
-from recipes.models import Recipe
-from tag.models import Tag
-from utils.pagination import make_pagination
+import pytest
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
-PER_PAGE = int(os.environ.get('PER_PAGE', 6))  # type: ignore
+from .base import RecipeBaseFunctionalTest
 
 
-def theory(request, *args, **kwargs):
-    recipes = Recipe.objects.get_published()
-    number_of_recipes = recipes.aggregate(number=Count('id'))
-
-    context = {
-        'recipes': recipes,
-        'number_of_recipes': number_of_recipes['number']
-    }
-    return render(
-        request,
-        'recipes/pages/theory.html',
-        context=context
-    )
-
-
-class RecipeListViewBase(ListView):
-    model = Recipe
-    context_object_name = 'recipes'
-    paginate_by = None  # type: ignore
-    ordering = ['-id']
-    template_name = 'recipes/pages/home.html'
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
-        qs = qs.filter(
-            is_published=True,
+@pytest.mark.functional_test
+class RecipeHomePageFunctionalTest(RecipeBaseFunctionalTest):
+    def test_recipe_home_page_without_recipes_not_found_message(self):
+        self.browser.get(self.live_server_url)
+        body = self.browser.find_element(By.TAG_NAME, 'body')
+        self.assertIn('No recipes found here 🥲', body.text)
+    
+    @patch('recipes.views.PER_PAGE', new=2)
+    def test_recipe_search_input_can_find_correct_recipes(self):
+        recipes = self.make_recipe_in_batch()
+        
+        title_needed = 'This is what I need'
+        
+        recipes[0].title = title_needed
+        recipes[0].save()
+        
+        # Usuário abre a página
+        self.browser.get(self.live_server_url)
+        
+        # Vê um campo de busca com o texto "Search for a recipe"
+        search_input = self.browser.find_element(
+            By.XPATH,
+            '//input[@placeholder="Search for a recipe"]'
         )
-        qs = qs.select_related('author', 'category', 'author__profile')
-        qs = qs.prefetch_related('tags')
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        page_obj, pagination_range = make_pagination(
-            self.request,
-            ctx.get('recipes'),
-            PER_PAGE
+        
+        # Clica neste input e digita o termo de busca
+        # para encontrar a receita o título desejado
+        search_input.send_keys(title_needed)
+        search_input.send_keys(Keys.ENTER)
+       
+        # O usuário vê o que estava procurando na página
+        self.assertIn(
+            title_needed,
+            self.browser.find_element(By.CLASS_NAME, 'main-content-list').text,    
         )
-        html_language = translation.get_language()
+   
+    @patch('recipes.views.site.PER_PAGE', new=2)
+    def test_recipe_home_page_pagination(self):
+        self.make_recipe_in_batch()
 
-        ctx.update(
-            {
-                'recipes': page_obj,
-                'pagination_range': pagination_range,
-                'html_language': html_language,
-            }
+        # Usuário abre a página
+        self.browser.get(self.live_server_url)
+        # Vê que tem uma paginação e clica na página 2
+        page2 = self.browser.find_element(
+            By.XPATH,
+            '//a[@aria-label="Go to page 2"]'
         )
-        return ctx
-
-
-class RecipeListViewHome(RecipeListViewBase):
-    template_name = 'recipes/pages/home.html'
-
-
-class RecipeListViewHomeApi(RecipeListViewBase):
-    template_name = 'recipes/pages/home.html'
-
-    # método que renderiza o que voce desejar para uma resposta
-    def render_to_response(self, context, **response_kwargs):
-        recipes = self.get_context_data()['recipes']
-        recipes_list = recipes.object_list.values()
-
-        return JsonResponse(
-            list(recipes_list),
-            safe=False
-        )
-
-
-class RecipeListViewCategory(RecipeListViewBase):
-    template_name = 'recipes/pages/category.html'
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        category_translation = _('Category')
-
-        ctx.update({
-            'title': f'{ctx.get("recipes")[0].category.name} -'
-            f'{category_translation} | '
-
-        })
-
-        return ctx
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
-        qs = qs.filter(
-            category__id=self.kwargs.get('category_id')
-        )
-
-        if not qs:
-            raise Http404
-
-        return qs
-
-
-class RecipeListViewTag(RecipeListViewBase):
-    template_name = 'recipes/pages/tag.html'
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
-        qs = qs.filter(tags__slug=self.kwargs.get('slug', ''))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        page_title = Tag.objects.filter(
-            slug=self.kwargs.get('slug', '')
-        ).first()
-
-        if not page_title:
-            page_title = 'No recipes found'
-
-        page_title = f'{page_title} - Tag |'
-
-        ctx.update({
-            'page_title': page_title,
-        })
-
-        return ctx
-
-
-class RecipeListViewSearch(RecipeListViewBase):
-    template_name = 'recipes/pages/search.html'
-
-    def get_queryset(self, *args, **kwargs):
-        search_term = self.request.GET.get('q', '')
-
-        if not search_term:
-            raise Http404()
-
-        qs = super().get_queryset(*args, **kwargs)
-        qs = qs.filter(
-            Q(
-                Q(title__icontains=search_term) |
-                Q(description__icontains=search_term),
-            ),
-        )
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        search_term = self.request.GET.get('q', '')
-
-        ctx.update({
-            'page_title': f'Search for "{search_term}" |',
-            'search_term': search_term,
-            'additional_url_query': f'&q={search_term}'
-        })
-
-        return ctx
-
-
-class RecipeDetail(DetailView):
-    model = Recipe
-    context_object_name = 'recipe'
-    template_name = 'recipes/pages/recipe-view.html'
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
-        qs = qs.filter(is_published=True)
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-
-        ctx.update({
-            'is_detail_page': True
-        })
-
-        return ctx
-
-
-class RecipeDetailAPI(RecipeDetail):
-    def render_to_response(self, context, **response_kwargs):
-        recipe = self.get_context_data()['recipe']
-        recipe_dict = model_to_dict(recipe)
-
-        recipe_dict['created_at'] = str(recipe.created_at)
-        recipe_dict['update_at'] = str(recipe.update_at)
-
-        if recipe_dict.get('cover'):
-            recipe_dict['cover'] = self.request.build_absolute_uri() + \
-                recipe_dict['cover'].url[1:]
-        else:
-            recipe_dict['cover'] = ''
-
-        del recipe_dict['is_published']
-        del recipe_dict['preparation_steps_is_html']
-
-        return JsonResponse(
-            recipe_dict,
-            safe=False
+        page2.click()
+        
+        # Vê que tem mais 2 receitas na página 2
+        self.assertEqual(
+            len(self.browser.find_elements(By.CLASS_NAME, 'recipe')),
+            2
         )
