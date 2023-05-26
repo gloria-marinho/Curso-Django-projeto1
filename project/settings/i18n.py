@@ -1,6 +1,7 @@
+from . import BASE_DIR
+
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
-from . import BASE_DIR
 
 LANGUAGE_CODE = 'pt-br'
 

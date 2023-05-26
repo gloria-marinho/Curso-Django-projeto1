@@ -1,5 +1,6 @@
 from django.urls import resolve, reverse
-from recipes import views
+
+from recipes.views import site
 
 from .test_recipe_base import RecipeTestBase
 
@@ -7,13 +8,18 @@ from .test_recipe_base import RecipeTestBase
 class RecipeDetailViewTest(RecipeTestBase):
     def test_recipe_detail_view_function_is_correct(self):
         view = resolve(
-            reverse('recipes:recipe', kwargs={'pk': 1})
+            reverse(
+                'recipes:recipe',
+                kwargs={
+                    'pk': 1
+                }
+            )
         )
-        self.assertIs(view.func.view_class, views.RecipeDetail)
+        self.assertIs(view.func.view_class, site.RecipeDetail)
 
     def test_recipe_detail_view_returns_404_if_no_recipes_found(self):
         response = self.client.get(
-            reverse('recipes:recipe', kwargs={'pk': 1000})
+            reverse('recipes:recipe', kwargs={'pk': 9})
         )
         self.assertEqual(response.status_code, 404)
 
@@ -36,16 +42,15 @@ class RecipeDetailViewTest(RecipeTestBase):
         # Check if one recipe exists
         self.assertIn(needed_title, content)
 
-    def test_recipe_detail_template_dont_load_recipe_not_published(self):
-        """Test recipe is_published False dont show"""
-        # Need a recipe for this test
+    def test_recipe_detail_template_dont_load_recipes_not_publisehd(self):
+        # test recipe is_published False dont show
         recipe = self.make_recipe(is_published=False)
 
         response = self.client.get(
             reverse(
                 'recipes:recipe',
                 kwargs={
-                    'pk': recipe.id
+                    'pk': recipe.id # type: ignore
                 }
             )
         )

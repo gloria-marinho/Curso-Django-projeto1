@@ -13,7 +13,7 @@ class RecipeModelTest(RecipeTestBase):
         recipe = Recipe(
             category=self.make_category(name='Test Default Category'),
             author=self.make_author(username='newuser'),
-            title='Recipe Title 1',
+            title='Recipe Title',
             description='Recipe Description',
             slug='recipe-slug-for-no-defaults',
             preparation_time=10,
@@ -32,8 +32,8 @@ class RecipeModelTest(RecipeTestBase):
         ('preparation_time_unit', 65),
         ('servings_unit', 65),
     ])
-    def test_recipe_fields_max_length(self, field, max_length):
-        setattr(self.recipe, field, 'A' * (max_length + 1))
+    def test_recipe_fields_max_lenght(self, field, max_lenght):
+        setattr(self.recipe, field, 'A' * (max_lenght + 1))
         with self.assertRaises(ValidationError):
             self.recipe.full_clean()
 
@@ -56,8 +56,9 @@ class RecipeModelTest(RecipeTestBase):
         self.recipe.title = needed
         self.recipe.full_clean()
         self.recipe.save()
+        str(self.recipe)
         self.assertEqual(
             str(self.recipe), needed,
-            msg=f'Recipe string representation must be '
+            msg=f'Recipe string representation nedd to be the same as title'
                 f'"{needed}" but "{str(self.recipe)}" was received.'
         )

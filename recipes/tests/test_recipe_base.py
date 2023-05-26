@@ -1,7 +1,9 @@
 from django.test import TestCase
+
 from recipes.models import Category, Recipe, User
 
 
+# aula 168 - usando mixins
 class RecipeMixin:
     def make_category(self, name='Category'):
         return Category.objects.create(name=name)
@@ -12,7 +14,7 @@ class RecipeMixin:
         last_name='name',
         username='username',
         password='123456',
-        email='username@email.com',
+        email='username2gmail.com',
     ):
         return User.objects.create_user(
             first_name=first_name,
@@ -62,7 +64,7 @@ class RecipeMixin:
         recipes = []
         for i in range(qtd):
             kwargs = {
-                'title': f'Recipe Title {i}',
+                'title': 'Recipe Title {i}',
                 'slug': f'r{i}',
                 'author_data': {'username': f'u{i}'}
             }
